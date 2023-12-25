@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+    </style>
+    <title>Screen Recorder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <section class="container">
+        <div class="buttonsWrapper">
+            <button id="startBtn">Start Recording</button>
+            <button id="stopBtn" disabled>Stop Recording</button>
+        </div>
+        <div class="videoWrapper">
+            <h1>Screen Recorder</h1>
+            <!-- <video id="recording" controls></video> -->
+        </div>
+    </section>
+
+    <script>
+        let mediaRecorder;
+        let recordedChunks = [];
+        let recording = false;
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const recordingVideo = document.getElementById('recording');
+        startBtn.addEventListener('click', startRecording);
+        stopBtn.addEventListener('click', stopRecording);
+
+        async function startRecording() {
+            const stream = await navigator.mediaDevices.getDisplayMedia({
+                video: { mediaSource: "screen" },
+                audio: true
+            });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = handleDataAvailable;
+            mediaRecorder.onstop = handleStop;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            recordedChunks = [];
+            mediaRecorder.start();
+            recording = true;
+            updateRecordingStatus();
+        }
+        
+        function handleDataAvailable(event) {
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        }
+
+        function handleStop() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const existingVideo = document.querySelector('.videoWrapper video');
+            if (existingVideo) {
+                existingVideo.remove();
+            }
+            const video = document.createElement('video');
+            video.src = url;
+            video.controls = true;
+            document.querySelector('.videoWrapper').appendChild(video);
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            recording = false;
+            updateRecordingStatus();
+        }
+
+        function stopRecording() {
+            mediaRecorder.stop();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+
+        function updateRecordingStatus() {
+            const statusMessage = recording ? "Recording..." : "Screen Recorder";
+            document.querySelector('.videoWrapper h1').innerText = statusMessage;
+            
+        }
+    </script>
+</body>
+</html>
